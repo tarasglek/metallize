@@ -1,0 +1,2 @@
+ARG SRC_IMG=latest
+FROM ${SRC_IMG}
