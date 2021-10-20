@@ -27,6 +27,10 @@ $(WORKDIR)/livecd.iso: $(WORKDIR)/container.tar squashfs-and-syslinux.image
 	cp etc/isolinux.cfg $(ISO_BOOT_DIR)
 	docker run -v $(ISODIR):/iso -v $(abspath $(WORKDIR)):/out --user $(USER) squashfs-and-syslinux.image mkisofs -o /out/livecd.iso -J -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table /iso
 	docker run -v $(abspath $(WORKDIR)):/out  --user $(USER) squashfs-and-syslinux.image isohybrid /out/livecd.iso
-	
+
 squashfs-and-syslinux.image:
 	DOCKER_BUILDKIT=1 docker build -t $@ -f docker/squashfs-and-syslinux.dockerfile .
+
+run: $(WORKDIR)/livecd.iso
+	# following arguments are handy for testing in console
+	kvm -hda $< -netdev user,id=user.0 -device e1000,netdev=user.0,mac=52:54:00:12:34:56 -m 4096  -serial stdio  -nographic -monitor null
