@@ -8,9 +8,12 @@ STRIP_DIR=--transform='s:.*/::'
 LIVE_DIR=$(ISODIR)/live
 SQUASHFS_ROOT=$(LIVE_DIR)/rootfs.squashfs
 
-$(WORKDIR)/container.tar: docker/dummy.dockerfile
+$(WORKDIR)/container.tar: docker/ubuntu-livecd.dockerfile
 	DOCKER_BUILDKIT=1 docker build --build-arg "SRC_IMG=ubuntu:20.04" -t my-ubuntu -f $< .
-	DOCKER_BUILDKIT=1 docker build --build-arg "SRC_IMG=ubuntu:20.04" -t my-ubuntu -f $< . --output type=tar,dest=$@
+	# ridiculous dance to get rid of /etc/resolv.conf that leaks from docker
+	DOCKER_BUILDKIT=1 docker build --build-arg "SRC_IMG=ubuntu:20.04" -t my-ubuntu -f $< . --output type=tar,dest=- | tar --delete etc/resolv.conf  > $@
+	cd build && mkdir -p etc && ln -sf /run/systemd/resolve/resolv.conf etc/resolv.conf
+	tar -rvf $@ -C build etc/resolv.conf
 
 $(SQUASHFS_ROOT): $(WORKDIR)/container.tar
 	mkdir -p $(LIVE_DIR)
