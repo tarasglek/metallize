@@ -16,8 +16,9 @@ ARG DEBIAN_FRONTEND=noninteractive
 ENV KERNEL 5.4.0-52-generic
 RUN --mount=type=cache,target=/var/cache/apt,id=squashfs-and-syslinux-2 \ 
     apt-get update && apt-get install --no-install-recommends -y \
-    mkisofs syslinux syslinux-common isolinux 
-WORKDIR /root
+    mkisofs syslinux syslinux-common isolinux
+RUN mkdir -p /build
+WORKDIR /build
 
 # This is an intermediate image for building things without bloating resulting image
 FROM common_base as builder
@@ -34,4 +35,5 @@ COPY etc/isolinux.cfg /root/
 #Ubuntu 18.04 doesn't have isohybrid which we need to make isos bootable from hd
 COPY --from=0 /usr/bin/isohybrid /usr/bin/isohybrid
 COPY --from=builder /usr/local/bin/*s*fs* /usr/local/bin/
+
 
