@@ -31,7 +31,8 @@ RUN cd squashfs-tools*/squashfs-tools && make LZ4_SUPPORT=1 LZMA_XZ_SUPPORT=1 XZ
 FROM common_base
 
 # this controls compression settings for initrd and squashfs
-COPY etc/isolinux.cfg /root/
+COPY etc/isolinux.cfg /etc
+COPY scripts/build.sh /
 #Ubuntu 18.04 doesn't have isohybrid which we need to make isos bootable from hd
 COPY --from=0 /usr/bin/isohybrid /usr/bin/isohybrid
 COPY --from=builder /usr/local/bin/*s*fs* /usr/local/bin/

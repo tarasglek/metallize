@@ -2,10 +2,11 @@ export COMPRESS=lz4
 export OPTS="-comp lz4 -b 1024K -always-use-fragments -keep-as-directory -no-recovery -exit-on-error"
 WORKDIR=build
 USER=$(shell id -u):$(shell id -g)
-ISODIR=$(abspath $(WORKDIR)/iso)
-ISO_BOOT_DIR=$(ISODIR)/isolinux
+ISO_SRC_DIR=$(abspath $(WORKDIR)/iso_src)
+KERNEL_DIR=$(WORKDIR)/kernel
+ISO_BOOT_DIR=$(ISO_SRC_DIR)/isolinux
 STRIP_DIR=--transform='s:.*/::'
-LIVE_DIR=$(ISODIR)/live
+LIVE_DIR=$(ISO_SRC_DIR)/live
 SQUASHFS_ROOT=$(LIVE_DIR)/rootfs.squashfs
 
 $(WORKDIR)/container.tar: docker/ubuntu-livecd.dockerfile
@@ -20,16 +21,16 @@ $(SQUASHFS_ROOT): $(WORKDIR)/container.tar
 	docker run -i -v $(LIVE_DIR):/tmp --user $(USER) squashfs-and-syslinux.image  mksquashfs - /tmp/$(shell basename $(SQUASHFS_ROOT))  -comp $(COMPRESS) -b 1024K -always-use-fragments -keep-as-directory -no-recovery -exit-on-error -tar  < $<
 
 $(WORKDIR)/livecd.iso: $(WORKDIR)/container.tar squashfs-and-syslinux.image
-	rm -fR $(ISODIR)
-	$(MAKE) $(SQUASHFS_ROOT)
-	mkdir -p $(ISO_BOOT_DIR)
-	tar --show-transformed-names --transform='s:-.*::' $(STRIP_DIR) -xvf $< -C $(ISO_BOOT_DIR) \
+	mkdir -p $(KERNEL_DIR) $(ISO_SRC_DIR)
+	tar --show-transformed-names --transform='s:-.*::' $(STRIP_DIR) -xvf $< -C $(KERNEL_DIR) \
 		--wildcards "boot/vmlinuz-*" \
 		--wildcards "boot/initrd*-*"
-	docker run squashfs-and-syslinux.image tar -c /usr/lib/ISOLINUX/isolinux.bin /usr/lib/syslinux/modules/bios/ldlinux.c32 | tar -C $(ISO_BOOT_DIR) $(STRIP_DIR) --show-transformed-names -xv
-	cp etc/isolinux.cfg $(ISO_BOOT_DIR)
-	docker run -v $(ISODIR):/iso -v $(abspath $(WORKDIR)):/out --user $(USER) squashfs-and-syslinux.image mkisofs -o /out/livecd.iso -J -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table /iso
-	docker run -v $(abspath $(WORKDIR)):/out  --user $(USER) squashfs-and-syslinux.image isohybrid /out/livecd.iso
+	$(MAKE) $(SQUASHFS_ROOT)
+	docker run --user $(USER) \
+		-v $(abspath $(KERNEL_DIR)):/boot \
+		-v $(ISO_SRC_DIR):/iso_src \
+		-v $(abspath $(WORKDIR)):/out \
+		squashfs-and-syslinux.image /build.sh
 
 squashfs-and-syslinux.image:
 	DOCKER_BUILDKIT=1 docker build -t $@ -f docker/squashfs-and-syslinux.dockerfile .
