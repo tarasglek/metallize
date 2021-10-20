@@ -1,0 +1,8 @@
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    alleths:
+      match:
+        name: e*
+      dhcp4: true
