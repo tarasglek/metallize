@@ -23,12 +23,11 @@ $(SQUASHFS_ROOT): $(WORKDIR)/container.tar
 	mkdir -p $(LIVE_DIR)
 	docker run -i -v $(LIVE_DIR):/tmp --user $(USER) squashfs-and-syslinux.image  mksquashfs - /tmp/$(shell basename $(SQUASHFS_ROOT))  -comp $(COMPRESS) -b 1024K -always-use-fragments -keep-as-directory -no-recovery -exit-on-error -tar  < $<
 
-$(WORKDIR)/livecd.iso: $(WORKDIR)/container.tar squashfs-and-syslinux.image
+$(WORKDIR)/livecd.iso: $(WORKDIR)/container.tar squashfs-and-syslinux.image $(SQUASHFS_ROOT)
 	mkdir -p $(KERNEL_DIR) $(ISO_SRC_DIR)
 	tar --show-transformed-names --transform='s:-.*::' $(STRIP_DIR) -xvf $< -C $(KERNEL_DIR) \
 		--wildcards "boot/vmlinuz-*" \
 		--wildcards "boot/initrd*-*"
-	$(MAKE) $(SQUASHFS_ROOT)
 	docker run --user $(USER) \
 		-v $(abspath $(KERNEL_DIR)):/boot \
 		-v $(ISO_SRC_DIR):/iso_src \
