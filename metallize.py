@@ -1,13 +1,14 @@
 """
-metallize.py --from image-in-registry/or-build-locally --kernel-and-init ubuntu-image --network 
-
-general:
-    compression: lz4
-from: image-in-registry/or-build-locally
-boot-env: ubuntu-livecd
-network: 
-    generator: netplan-dhcp
-generate:
-    generator: ubuntu-livecd
-    output: live.iso
+metallize.py config.yaml
 """
+
+import yaml
+import sys
+def main(config_file):
+    config = yaml.load(open(config_file), Loader=yaml.SafeLoader)
+    print(config)
+
+if __module__ == '__main__':
+    config_file = sys.argv[-1]
+    main(config_file)
+    
