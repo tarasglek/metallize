@@ -45,7 +45,7 @@ def build_squashfs(config, tar_file: Path, squashfs_file: Path):
         f"mkdir -p {live_path}",
         f"rm -f {squashfs_file}",
 	    (
-            f"docker run -i -v {live_path.resolve()}:/tmp {USER_VAR} squashfs-and-syslinux.image "
+            f"docker run -i -v {live_path.absolute()}:/tmp {USER_VAR} squashfs-and-syslinux.image "
             f"mksquashfs - /tmp/{squashfs_file.name}  -comp {config['args']['compression']} -b 1024K -always-use-fragments -keep-as-directory -no-recovery -exit-on-error -tar  < {tar_file}"
         )
     ]
