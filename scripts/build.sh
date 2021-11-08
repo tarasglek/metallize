@@ -11,3 +11,4 @@ mkisofs -o /out/$1 -J -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boo
 
 # todo: use bootctl to generate efiboot.img, then follow instructions from https://wiki.syslinux.org/wiki/index.php?title=Isohybrid
 # isohybrid --uefi /out/livecd.iso
+isohybrid /out/livecd.iso
