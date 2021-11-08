@@ -37,6 +37,6 @@ $(WORKDIR)/livecd.iso: $(WORKDIR)/container.tar squashfs-and-syslinux.image $(SQ
 squashfs-and-syslinux.image:
 	DOCKER_BUILDKIT=1 docker build -t $@ -f docker/squashfs-and-syslinux.dockerfile .
 
-run: $(WORKDIR)/livecd.iso
+run: #$(WORKDIR)/livecd.iso
 	# following arguments are handy for testing in console
-	kvm -hda $< -netdev user,id=user.0 -device e1000,netdev=user.0,mac=52:54:00:12:34:56 -m 4096  -serial stdio  -nographic -monitor null
+	kvm -hda $(WORKDIR)/livecd.iso -netdev user,id=user.0 -device e1000,netdev=user.0,mac=52:54:00:12:34:56 -m 4096  -serial stdio  -nographic -monitor null

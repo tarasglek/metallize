@@ -20,6 +20,8 @@ def build_tar(config, images_path, build_path, tar_file):
         "#" + str(config),
         "mkdir -p " + str(build_path)
     ]
+    config_args = config['args']
+    build_args = " ".join([f"--build-arg METALLIZE_{key.upper()}={value}" for (key, value) in config_args.items()])
     prev_img = None
     for i, image in enumerate(images_ls):
         src_file = images_path / image
@@ -31,7 +33,7 @@ def build_tar(config, images_path, build_path, tar_file):
             else:
                 fail(f"No file named '{src_file}' exists")
         prev_img_str = f"--build-arg METALLIZE_SRC_IMG='{prev_img}'" if prev_img else ""
-        cmds.append(f"DOCKER_BUILDKIT=1 docker build {prev_img_str} -t {image} -f {src_file} .")
+        cmds.append(f"DOCKER_BUILDKIT=1 docker build {prev_img_str} {build_args} -t {image} -f {src_file} .")
         prev_img = image
     cmds.append(cmds[-1] + f" --output type=tar,dest=- | tar --delete etc/resolv.conf  > {tar_file}" )
     cmds.append(f"(cd {build_path} && mkdir -p etc && ln -sf /run/systemd/resolve/resolv.conf etc/resolv.conf)")
@@ -45,8 +47,9 @@ def build_squashfs(config, tar_file: Path, squashfs_file: Path):
         f"mkdir -p {live_path}",
         f"rm -f {squashfs_file}",
 	    (
+            f"tar --wildcards --delete 'boot/*' < {tar_file} | "
             f"docker run -i -v {live_path.absolute()}:/tmp {USER_VAR} squashfs-and-syslinux.image "
-            f"mksquashfs - /tmp/{squashfs_file.name}  -comp {config['args']['compression']} -b 1024K -always-use-fragments -keep-as-directory -no-recovery -exit-on-error -tar  < {tar_file}"
+            f"mksquashfs - /tmp/{squashfs_file.name}  -comp {config['args']['compression']} -b 1024K -always-use-fragments -keep-as-directory -no-recovery -exit-on-error -tar "
         )
     ]
     return cmds
