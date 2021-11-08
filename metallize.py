@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 metallize.py config.yaml
 """
@@ -32,7 +33,7 @@ def build_tar(config, images_path, build_path, tar_file):
         prev_img_str = f"--build-arg METALLIZE_SRC_IMG='{prev_img}'" if prev_img else ""
         cmds.append(f"DOCKER_BUILDKIT=1 docker build {prev_img_str} -t {image} -f {src_file} .")
         prev_img = image
-    cmds.append(cmds[-1] + f"--output type=tar,dest=- | tar --delete etc/resolv.conf  > {tar_file}" )
+    cmds.append(cmds[-1] + f" --output type=tar,dest=- | tar --delete etc/resolv.conf  > {tar_file}" )
     cmds.append(f"(cd {build_path} && mkdir -p etc && ln -sf /run/systemd/resolve/resolv.conf etc/resolv.conf)")
     cmds.append(f"tar -rvf {tar_file} -C build etc/resolv.conf")
     return cmds
@@ -42,18 +43,19 @@ def build_squashfs(config, tar_file: Path, squashfs_file: Path):
     live_path = squashfs_file.parent
     cmds = [
         f"mkdir -p {live_path}",
+        f"rm -f {squashfs_file}",
 	    (
-            f"docker run -i -v {live_path}:/tmp {USER_VAR} squashfs-and-syslinux.image "
+            f"docker run -i -v {live_path.resolve()}:/tmp {USER_VAR} squashfs-and-syslinux.image "
             f"mksquashfs - /tmp/{squashfs_file.name}  -comp {config['args']['compression']} -b 1024K -always-use-fragments -keep-as-directory -no-recovery -exit-on-error -tar  < {tar_file}"
         )
     ]
     return cmds
 
 def extract_kernel_files(boot_path: Path, tar_file: Path):
-    cmds = [ 
+    cmds = [
         f"mkdir -p {boot_path}",
         (
-	        f"tar --show-transformed-names --transform='s:-.*::' $(STRIP_DIR) -xvf {tar_file} -C {boot_path} "
+	        f"tar --show-transformed-names --transform='s:-.*::' --transform='s:.*/::' -xvf {tar_file} -C {boot_path} "
 		    '--wildcards "boot/vmlinuz-*" '
 		    '--wildcards "boot/initrd*-*"'
         )
@@ -88,11 +90,12 @@ def main(config_file):
     images_path = Path(config_metallize['dockerfile_dir'])
     tar_file = build_path / f"{config_file_path.name}.tar"
     iso_src_path = build_path / "iso_src"
-    squashfs_file = iso_src_path / "live" / f"roofs.squashfs"
+    squashfs_file = iso_src_path / "live" / f"rootfs.squashfs"
     boot_path = iso_src_path / "boot"
 
     cmds = (
-        build_tar(config, images_path, build_path, tar_file)
+        ["set -x -e"]
+        + build_tar(config, images_path, build_path, tar_file)
         + build_squashfs(config, tar_file, squashfs_file)
         + extract_kernel_files(boot_path, tar_file)
         + generate(config, images_path, build_path, iso_src_path, boot_path)
@@ -101,6 +104,8 @@ def main(config_file):
 
 
 if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        print(f"Usage: {sys.argv[0]} <definition.yaml>", file=sys.stderr)
+        sys.exit(1)
     config_file = sys.argv[-1]
     main(config_file)
-    
