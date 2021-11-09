@@ -1,13 +1,3 @@
-# syntax = docker/dockerfile:1.2
-# require buildkit ^
-FROM ubuntu:trusty
-# facilitate apt cache
-RUN rm -f /etc/apt/apt.conf.d/docker-clean
-# isohybrid not available in newer ubuntu
-ARG DEBIAN_FRONTEND=noninteractive
-RUN --mount=type=cache,target=/var/cache/apt,id=squashfs-and-syslinux-1 \
-    apt-get update && apt-get install --no-install-recommends -y syslinux
-
 FROM ubuntu:20.04 as common_base
 # facilitate apt cache
 RUN rm -f /etc/apt/apt.conf.d/docker-clean
@@ -16,7 +6,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 ENV KERNEL 5.4.0-52-generic
 RUN --mount=type=cache,target=/var/cache/apt,id=squashfs-and-syslinux-2 \ 
     apt-get update && apt-get install --no-install-recommends -y \
-    mkisofs syslinux syslinux-common isolinux p7zip-full curl ca-certificates
+    mkisofs syslinux syslinux-utils syslinux-common isolinux p7zip-full curl ca-certificates
 RUN mkdir -p /build
 WORKDIR /build
 
@@ -42,5 +32,4 @@ RUN curl -L -o debian.iso https://cdimage.debian.org/debian-cd/current/amd64/iso
 COPY etc/* /etc
 COPY scripts/build.sh /
 #Ubuntu 18.04 doesn't have isohybrid which we need to make isos bootable from hd
-COPY --from=0 /usr/bin/isohybrid /usr/bin/isohybrid
 COPY --from=builder /usr/local/bin/*s*fs* /usr/local/bin/
