@@ -45,6 +45,7 @@ def build_squashfs(config, tar_file: Path, squashfs_file: Path):
     live_path = squashfs_file.parent
     cmds = [
         f"mkdir -p {live_path}",
+        f"DOCKER_BUILDKIT=1 docker build -t squashfs-and-syslinux.image -f docker/squashfs-and-syslinux.dockerfile .",
         f"rm -f {squashfs_file}",
 	    (
             f"tar --wildcards --delete 'boot/*' < {tar_file} | "
