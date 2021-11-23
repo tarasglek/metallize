@@ -14,7 +14,7 @@ def fail(msg):
 Takes list of docker file and produces a tar file rootfs
 does some magic for /etc/resolv.conf, as the one from docker build will almost-certainly be wrong
 """
-def build_tar(config, images_path, build_path, tar_file):
+def build_tar(config, images_path, build_path, plugins_path, tar_file):
     images_ls = config['images']
     cmds = [
         "#" + str(config),
@@ -24,7 +24,7 @@ def build_tar(config, images_path, build_path, tar_file):
     build_args = " ".join([f"--build-arg METALLIZE_{key.upper()}={value}" for (key, value) in config_args.items()])
     prev_img = None
     for i, image in enumerate(images_ls):
-        src_file = images_path / image
+        src_file = plugins_path / image if (plugins_path / image).exists() else images_path / image
         if not src_file.exists():
             if i == 0:
                 cmds.append("docker pull " + image)
@@ -89,10 +89,12 @@ def main(config_file):
     config_metallize = config['metallize'] = config.get('metallize', {})
     config_metallize['dockerfile_dir'] = config_metallize.get('dockerfile_dir', 'docker')
     config_metallize['build_dir'] = config_metallize.get('build_dir', 'build')
+    config_metallize['plugin_dir'] = config_metallize.get('plugin_dir', 'plugin')
     config_args = config['args'] = config.get('args', {})
     config_args['compression'] = config_args.get('compression', 'lzma')
     build_path = Path(config_metallize['build_dir'])
     images_path = Path(config_metallize['dockerfile_dir'])
+    plugin_path = Path(config_metallize['plugin_dir'])
     tar_file = build_path / f"{config_file_path.name}.tar"
     iso_src_path = build_path / "iso_src"
     squashfs_file = iso_src_path / "live" / f"rootfs.squashfs"
@@ -100,7 +102,7 @@ def main(config_file):
 
     cmds = (
         ["set -x -e"]
-        + build_tar(config, images_path, build_path, tar_file)
+        + build_tar(config, images_path, build_path, plugin_path, tar_file)
         + build_squashfs(config, tar_file, squashfs_file)
         + extract_kernel_files(boot_path, tar_file)
         + generate(config, images_path, build_path, iso_src_path, boot_path)
