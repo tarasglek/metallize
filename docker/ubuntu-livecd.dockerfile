@@ -9,6 +9,3 @@ RUN --mount=type=cache,target=/var/cache/apt,id=dummy \
     apt-get update && apt install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
       live-boot live-boot-initramfs-tools linux-image-$KERNEL linux-modules-extra-$KERNEL  systemd-sysv sudo netplan.io
 COPY etc/all-dhcp.yaml /etc/netplan
-
-ENV USER user
-RUN useradd -m $USER -s /bin/bash -G sudo && echo "$USER:$USER" | chpasswd
