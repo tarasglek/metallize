@@ -43,12 +43,14 @@ def build_tar(config, images_path, build_path, tar_file):
 USER_VAR='--user `id -u`:`id -g`'
 def build_squashfs(config, tar_file: Path, squashfs_file: Path):
     live_path = squashfs_file.parent
+    generator = config['output']['generator']
     cmds = [
         f"mkdir -p {live_path}",
+        f"DOCKER_BUILDKIT=1 docker build -t {generator} -f docker/{generator} .",
         f"rm -f {squashfs_file}",
 	    (
             f"tar --wildcards --delete 'boot/*' < {tar_file} | "
-            f"docker run -i -v {live_path.absolute()}:/tmp {USER_VAR} squashfs-and-syslinux.image "
+            f"docker run -i -v {live_path.absolute()}:/tmp {USER_VAR} {generator} "
             f"mksquashfs - /tmp/{squashfs_file.name}  -comp {config['args']['compression']} -b 1024K -always-use-fragments -keep-as-directory -no-recovery -exit-on-error -tar "
         )
     ]
