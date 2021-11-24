@@ -114,7 +114,7 @@ def main(config_file, extension_dir):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('config_file', help='yaml file with configs')
-    parser.add_argument('--extensions_dir', help='path to dir with extension', default='metallize/')
+    parser.add_argument('--extensions_dir', help='path to dir with extension', default='metallize')
     args = parser.parse_args()
 
     main(args.config_file, args.extensions_dir)
