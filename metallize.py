@@ -2,6 +2,7 @@
 """
 metallize.py config.yaml
 """
+import os
 import yaml
 import sys
 import argparse
@@ -15,7 +16,7 @@ def fail(msg):
 Takes list of docker file and produces a tar file rootfs
 does some magic for /etc/resolv.conf, as the one from docker build will almost-certainly be wrong
 """
-def build_tar(config, images_path, build_path, extensions_path, tar_file):
+def build_tar(config, images_path, build_path, extensions_path, project_path, tar_file):
     images_ls = config['images']
     cmds = [
         "#" + str(config),
@@ -26,7 +27,7 @@ def build_tar(config, images_path, build_path, extensions_path, tar_file):
     prev_img = None
     for i, image in enumerate(images_ls):
         src_file = extensions_path / image if (extensions_path / image).exists() else images_path / image
-        context = extensions_path if (extensions_path / image).exists() else "."
+        context = extensions_path if (extensions_path / image).exists() else project_path
         if not src_file.exists():
             if i == 0:
                 cmds.append("docker pull " + image)
@@ -43,12 +44,12 @@ def build_tar(config, images_path, build_path, extensions_path, tar_file):
     return cmds
 
 USER_VAR='--user `id -u`:`id -g`'
-def build_squashfs(config, tar_file: Path, squashfs_file: Path):
+def build_squashfs(config, tar_file: Path, squashfs_file: Path, images_path: Path, project_path: Path):
     live_path = squashfs_file.parent
     generator = config['output']['generator']
     cmds = [
         f"mkdir -p {live_path}",
-        f"DOCKER_BUILDKIT=1 docker build -t {generator} -f docker/{generator} .",
+        f"DOCKER_BUILDKIT=1 docker build -t {generator} -f {images_path / generator} {project_path}",
         f"rm -f {squashfs_file}",
 	    (
             f"tar --wildcards --delete 'boot/*' < {tar_file} | "
@@ -69,12 +70,12 @@ def extract_kernel_files(boot_path: Path, tar_file: Path):
     ]
     return cmds
 
-def generate(config, images_path: Path, build_path:Path, iso_src_path:Path, boot_path:Path):
+def generate(config, images_path: Path, build_path:Path, iso_src_path:Path, boot_path:Path, project_path: Path):
     output_path = build_path / config['output']['output-file']
     config_output_generator = config['output']['generator']
 
     cmds = [
-        f"DOCKER_BUILDKIT=1 docker build -t {config_output_generator} -f {images_path / config_output_generator} .",
+        f"DOCKER_BUILDKIT=1 docker build -t {config_output_generator} -f {images_path / config_output_generator} {project_path}",
         (
             f"docker run {USER_VAR} "
             f"-v {boot_path.absolute()}:/boot "
@@ -86,10 +87,11 @@ def generate(config, images_path: Path, build_path:Path, iso_src_path:Path, boot
     return cmds
 
 def main(config_file, extension_dir):
+    project_path = Path(os.path.dirname(os.path.realpath(__file__)))
     config_file_path = Path(config_file)
     config = yaml.load(open(config_file_path), Loader=yaml.SafeLoader)
     config_metallize = config['metallize'] = config.get('metallize', {})
-    config_metallize['dockerfile_dir'] = config_metallize.get('dockerfile_dir', 'docker')
+    config_metallize['dockerfile_dir'] = config_metallize.get('dockerfile_dir', project_path / 'docker')
     config_metallize['build_dir'] = config_metallize.get('build_dir', 'build')
     config_args = config['args'] = config.get('args', {})
     config_args['compression'] = config_args.get('compression', 'lzma')
@@ -103,10 +105,10 @@ def main(config_file, extension_dir):
 
     cmds = (
         ["set -x -e"]
-        + build_tar(config, images_path, build_path, extension_path, tar_file)
-        + build_squashfs(config, tar_file, squashfs_file)
+        + build_tar(config, images_path, build_path, extension_path, project_path, tar_file)
+        + build_squashfs(config, tar_file, squashfs_file, images_path, project_path)
         + extract_kernel_files(boot_path, tar_file)
-        + generate(config, images_path, build_path, iso_src_path, boot_path)
+        + generate(config, images_path, build_path, iso_src_path, boot_path, project_path)
     )
     print("\n".join(cmds))
 
