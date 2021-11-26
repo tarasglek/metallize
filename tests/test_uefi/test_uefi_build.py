@@ -18,6 +18,13 @@ def build():
     os.system(f'rm -rf {test_path}/build')
 
 def test_build_with_uefi(build):
+    with open(metallize_logs, 'r') as log_file:
+        lines = log_file.readlines()
+
+        if not lines or lines[-1].find('/out/livecd.iso') == -1:
+            assert False
+            return
+
     with open(uefi_logs, 'w') as log_file:
         p = subprocess.Popen([f"{project_path}/scripts/uefi-boot.sh", f"{test_path}/build/livecd.iso"],
                              start_new_session=True, stdout=log_file, stderr=log_file)
