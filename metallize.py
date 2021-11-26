@@ -112,11 +112,31 @@ def main(config_file, extension_dir):
     )
     print("\n".join(cmds))
 
+def is_docker_installed():
+    import subprocess
+    try:
+        version = subprocess.check_output("docker version --format '{{.Server.Version}}'", shell=True)
+    except subprocess.CalledProcessError:
+        return False
+
+    version = version.decode('ascii')
+    version = version.split('.')
+
+    if int(version[0]) > 18:
+        return True
+    elif int(version[0]) == 18 and int(version[1]) >= 9:
+        return True
+
+    return False
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('config_file', help='yaml file with configs')
     parser.add_argument('--extensions_dir', help='path to dir with extension', default='metallize')
     args = parser.parse_args()
+
+    if not is_docker_installed():
+        print("You should have docker with version 18.09 or more", file=sys.stderr)
+        sys.exit(1)
 
     main(args.config_file, args.extensions_dir)
