@@ -112,6 +112,7 @@ def main(config_file, extension_dir):
     )
     print("\n".join(cmds))
 
+
 def is_docker_installed():
     import subprocess
     try:
@@ -129,11 +130,16 @@ def is_docker_installed():
 
     return False
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('config_file', help='yaml file with configs')
     parser.add_argument('--extensions_dir', help='path to dir with extension', default='metallize')
     args = parser.parse_args()
+
+    if sys.platform != "linux" and sys.platform != "linux2":
+        print("Now metallize works only on linux platform", file=sys.stderr)
+        sys.exit(1)
 
     if not is_docker_installed():
         print("You should have docker with version 18.09 or more", file=sys.stderr)
