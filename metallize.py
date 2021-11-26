@@ -40,7 +40,7 @@ def build_tar(config, images_path, build_path, extensions_path, project_path, ta
         prev_img = image
     cmds.append(cmds[-1] + f" --output type=tar,dest=- | tar --delete etc/resolv.conf  > {tar_file}" )
     cmds.append(f"(cd {build_path} && mkdir -p etc && ln -sf /run/systemd/resolve/resolv.conf etc/resolv.conf)")
-    cmds.append(f"tar -rvf {tar_file} -C build etc/resolv.conf")
+    cmds.append(f"tar -rvf {tar_file} -C {build_path} etc/resolv.conf")
     return cmds
 
 USER_VAR='--user `id -u`:`id -g`'
