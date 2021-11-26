@@ -15,7 +15,7 @@ def build():
     os.system(f'rm -rf {uefi_logs} {metallize_logs}')
     os.system(f'{project_path}/metallize.py {test_path}/ubuntu20-livecd.iso.yaml | bash > {metallize_logs} 2>&1')
     yield
-    os.system(f'rm -rf build')
+    os.system(f'rm -rf {test_path}/build')
 
 def test_build_with_uefi(build):
     with open(uefi_logs, 'w') as log_file:
