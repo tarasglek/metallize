@@ -1,0 +1,16 @@
+---
+# args are passed to every docker build command
+args:
+  compression: lz4
+# images are chained together using dockerfile FROM statement
+# first image can be pulled from registry
+images:
+- ubuntu:20.04
+- ubuntu-livecd.dockerfile
+- ubuntu-netplan.dockerfile
+- test.dockerfile
+output:
+  generator: squashfs-and-syslinux.dockerfile
+  output-file: livecd.iso
+metallize:
+  build_dir: tests/test_ext_dir/build
