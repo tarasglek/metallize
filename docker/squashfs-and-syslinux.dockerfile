@@ -6,7 +6,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 ENV KERNEL 5.4.0-52-generic
 RUN --mount=type=cache,target=/var/cache/apt,id=squashfs-and-syslinux-2 \ 
     apt-get update && apt-get install --no-install-recommends -y \
-    mkisofs syslinux syslinux-utils syslinux-common isolinux p7zip-full curl ca-certificates
+    mkisofs syslinux syslinux-utils syslinux-common isolinux p7zip-full curl ca-certificates wget
 RUN mkdir -p /build
 WORKDIR /build
 
@@ -20,7 +20,7 @@ RUN cd squashfs-tools*/squashfs-tools && make LZ4_SUPPORT=1 LZMA_XZ_SUPPORT=1 XZ
 
 FROM common_base
 
-RUN curl -L -o debian.iso https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-11.1.0-amd64-netinst.iso && \
+RUN wget -O debian.iso -q --show-progress https://cdimage.debian.org/cdimage/archive/11.1.0/amd64/iso-cd/debian-11.1.0-amd64-netinst.iso && \
     7z x debian.iso -odebian_files && \
     mkdir -p /etc/grub && \
     mv 'debian_files/[BOOT]/2-Boot-NoEmul.img' /etc/grub/debian.efi.stub && \
