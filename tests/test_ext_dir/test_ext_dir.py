@@ -3,27 +3,21 @@ import time
 import subprocess
 import pytest
 import psutil
-import logging
-LOGGER = logging.getLogger(__name__)
+from tests.metallize_helpers import cmd
 
 project_path = os.path.realpath(__file__).split("tests/")[0]
 test_path = os.path.dirname(os.path.realpath(__file__))
 metallize_logs = test_path + "/metallize_logs.txt"
 uefi_logs = test_path + "/build_uefi_logs.txt"
 
-
-def run(cmd):
-    LOGGER.info(cmd)
-    os.system(cmd)
-
 @pytest.fixture
 def build():
-    run(f'rm -rf {uefi_logs} {metallize_logs}')
-    run(f'cd {test_path} | {project_path}/metallize.py {test_path}/ubuntu20-livecd.iso.yaml --extensions_dir={test_path} '
+    cmd.run(f'rm -rf {uefi_logs} {metallize_logs}')
+    cmd.run(f'cd {test_path} | {project_path}/metallize.py {test_path}/ubuntu20-livecd.iso.yaml --extensions_dir={test_path} '
               f'| bash > {metallize_logs} 2>&1')
 
     yield
-    run(f'rm -rf {test_path}/build')
+    cmd.run(f'rm -rf {test_path}/build')
 
 def test_build_from_ext_dir(build):
     with open(metallize_logs, 'r') as log_file:
@@ -34,10 +28,7 @@ def test_build_from_ext_dir(build):
             return
 
     with open(uefi_logs, 'w') as log_file:
-        cmd = f"{project_path}/scripts/uefi-boot.sh {test_path}/build/livecd.iso"
-        logging.info(cmd)
-        p = subprocess.Popen(cmd,
-                             start_new_session=True, stdout=log_file, stderr=log_file, shell=True)
+        p = cmd.popen(f"{project_path}/scripts/uefi-boot.sh {test_path}/build/livecd.iso", log_file)
 
     start_time = time.time()
     while time.time() - start_time < 3 * 60:
