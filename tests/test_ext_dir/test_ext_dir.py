@@ -34,8 +34,10 @@ def test_build_from_ext_dir(build):
             return
 
     with open(uefi_logs, 'w') as log_file:
-        p = subprocess.Popen([f"{project_path}/scripts/uefi-boot.sh", f"{test_path}/build/livecd.iso"],
-                             start_new_session=True, stdout=log_file, stderr=log_file)
+        cmd = f"{project_path}/scripts/uefi-boot.sh {test_path}/build/livecd.iso"
+        logging.info(cmd)
+        p = subprocess.Popen(cmd,
+                             start_new_session=True, stdout=log_file, stderr=log_file, shell=True)
 
     start_time = time.time()
     while time.time() - start_time < 3 * 60:
