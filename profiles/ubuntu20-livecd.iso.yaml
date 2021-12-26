@@ -8,6 +8,7 @@ images:
 - ubuntu:20.04
 - ubuntu-livecd.dockerfile
 - ubuntu-netplan.dockerfile
+- admin-user.dockerfile
 output:
   generator: squashfs-and-syslinux.dockerfile
   output-file: livecd.iso

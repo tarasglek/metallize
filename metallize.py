@@ -70,7 +70,7 @@ def extract_kernel_files(boot_path: Path, tar_file: Path):
     ]
     return cmds
 
-def generate(config, images_path: Path, build_path:Path, iso_src_path:Path, boot_path:Path, project_path: Path):
+def generate_iso(config, images_path: Path, build_path:Path, iso_src_path:Path, boot_path:Path, project_path: Path):
     output_path = build_path / config['output']['output-file']
     config_output_generator = config['output']['generator']
 
@@ -106,9 +106,9 @@ def main(config_file, extension_dir):
     cmds = (
         ["set -x -e"]
         + build_tar(config, images_path, build_path, extension_path, project_path, tar_file)
-        + build_squashfs(config, tar_file, squashfs_file, images_path, project_path)
-        + extract_kernel_files(boot_path, tar_file)
-        + generate(config, images_path, build_path, iso_src_path, boot_path, project_path)
+        # + build_squashfs(config, tar_file, squashfs_file, images_path, project_path)
+        # + extract_kernel_files(boot_path, tar_file)
+        + generate_iso(config, images_path, build_path, iso_src_path, boot_path, project_path)
     )
     print("\n".join(cmds))
 
