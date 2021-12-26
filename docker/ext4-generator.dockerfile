@@ -10,15 +10,6 @@ RUN --mount=type=cache,target=/var/cache/apt,id=squashfs-and-syslinux-2 \
 RUN mkdir -p /build
 WORKDIR /build
 
-# This is an intermediate image for building things without bloating resulting image
-FROM common_base as builder
-RUN --mount=type=cache,target=/var/cache/apt,id=squashfs-and-syslinux-4 \ 
-    apt-get update && apt-get install -y build-essential liblzma-dev liblz4-dev zlib1g-dev
-ENV SQUASHFS_TAR 4.5.tar.gz
-RUN curl -L https://github.com/plougher/squashfs-tools/archive/refs/tags/$SQUASHFS_TAR | tar -zxv
-RUN cd squashfs-tools*/squashfs-tools && make LZ4_SUPPORT=1 LZMA_XZ_SUPPORT=1 XZ_SUPPORT=1 -j`nproc` && make install
-
-FROM common_base
 
 RUN wget -O debian.iso -q --show-progress https://cdimage.debian.org/cdimage/archive/11.1.0/amd64/iso-cd/debian-11.1.0-amd64-netinst.iso && \
     7z x debian.iso -odebian_files && \
@@ -30,6 +21,6 @@ RUN wget -O debian.iso -q --show-progress https://cdimage.debian.org/cdimage/arc
 
 # this controls compression settings for initrd and squashfs
 COPY etc/* /etc
-COPY scripts/build-iso.sh /build.cmd
-# copy squashfs tools
+COPY scripts/build.sh /build.cmd
+#Ubuntu 18.04 doesn't have isohybrid which we need to make isos bootable from hd
 COPY --from=builder /usr/local/bin/*s*fs* /usr/local/bin/

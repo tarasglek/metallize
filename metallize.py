@@ -81,7 +81,7 @@ def generate(config, images_path: Path, build_path:Path, iso_src_path:Path, boot
             f"-v {boot_path.absolute()}:/boot "
             f"-v {iso_src_path.absolute()}:/iso_src "
             f"-v {output_path.parent.absolute()}:/out "
-            f"{config_output_generator} /build.sh {output_path.name}"
+            f"{config_output_generator} /build.cmd {output_path.name}"
         )
     ]
     return cmds
