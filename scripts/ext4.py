@@ -12,7 +12,7 @@ def main(input_tar, output_diskimage):
     print(f"umount -l {output_diskimage}")
     print(f"rm -f {output_diskimage} {mnt_dir}")
     print(f"truncate -s {int(tar_size * fudge_factor)} {output_diskimage}")
-    print(f"mkfs.ext4 {output_diskimage}")
+    print(f"mkfs.ext4 -L METALLIZE_ROOT {output_diskimage}")
     print(f"mkdir -p {mnt_dir}")
     print(f"sudo mount {output_diskimage} {mnt_dir} -o loop")
     print(f"sudo tar -C {mnt_dir} -xvf {input_tar}")
