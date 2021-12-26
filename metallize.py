@@ -36,8 +36,12 @@ def build_tar(config, images_path, build_path, extensions_path, project_path, ta
             else:
                 fail(f"No file named '{src_file}' exists")
         prev_img_str = f"--build-arg METALLIZE_SRC_IMG='{prev_img}'" if prev_img else ""
-        cmds.append(f"DOCKER_BUILDKIT=1 docker build {prev_img_str} {build_args} -t {image} -f {src_file} {context}")
-        prev_img = image
+        tag = image
+        # make for a pretty name of the final docker image
+        if i == len(images_ls) - 1:
+            tag = Path(tar_file).stem.split('.')[0]
+        cmds.append(f"DOCKER_BUILDKIT=1 docker build {prev_img_str} {build_args} -t {tag} -f {src_file} {context}")
+        prev_img = tag
     cmds.append(cmds[-1] + f" --output type=tar,dest=- | tar --delete etc/resolv.conf  > {tar_file}" )
     cmds.append(f"(cd {build_path} && mkdir -p etc && ln -sf /run/systemd/resolve/resolv.conf etc/resolv.conf)")
     cmds.append(f"tar -rvf {tar_file} -C {build_path} etc/resolv.conf")
