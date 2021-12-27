@@ -51,9 +51,10 @@ USER_VAR='--user `id -u`:`id -g`'
 def build_squashfs(config, tar_file: Path, squashfs_file: Path, images_path: Path, project_path: Path):
     live_path = squashfs_file.parent
     generator = config['output']['generator']
+    generator_docker = "livecd-generator.dockerfile"
     cmds = [
         f"mkdir -p {live_path}",
-        f"DOCKER_BUILDKIT=1 docker build -t {generator} -f {images_path / generator} {project_path}",
+        f"DOCKER_BUILDKIT=1 docker build -t {generator} -f {images_path / generator_docker} {project_path}",
         f"rm -f {squashfs_file}",
 	    (
             f"tar --wildcards --delete 'boot/*' < {tar_file} | "
@@ -70,22 +71,6 @@ def extract_kernel_files(boot_path: Path, tar_file: Path):
 	        f"tar --show-transformed-names --transform='s:-.*::' --transform='s:.*/::' -xvf {tar_file} -C {boot_path} "
 		    '--wildcards "boot/vmlinuz-*" '
 		    '--wildcards "boot/initrd*-*"'
-        )
-    ]
-    return cmds
-
-def generate_iso(config, images_path: Path, build_path:Path, iso_src_path:Path, boot_path:Path, project_path: Path):
-    output_path = build_path / config['output']['output-file']
-    config_output_generator = config['output']['generator']
-
-    cmds = [
-        f"DOCKER_BUILDKIT=1 docker build -t {config_output_generator} -f {images_path / config_output_generator} {project_path}",
-        (
-            f"docker run {USER_VAR} "
-            f"-v {boot_path.absolute()}:/boot "
-            f"-v {iso_src_path.absolute()}:/iso_src "
-            f"-v {output_path.parent.absolute()}:/out "
-            f"{config_output_generator} /build.cmd {output_path.name}"
         )
     ]
     return cmds
