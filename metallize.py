@@ -90,6 +90,13 @@ def generate_iso(config, images_path: Path, build_path:Path, iso_src_path:Path, 
     ]
     return cmds
 
+def generate_livecd(config, tar_file:Path, output_file_path:Path, images_path: Path, project_path: Path):
+    cmds = (build_squashfs(config, tar_file, squashfs_file, images_path, project_path)
+            + extract_kernel_files(boot_path, tar_file)
+    )
+    return cmds
+
+
 def generate_ext4(config, tar_file:Path, output_file_path:Path, images_path: Path, project_path: Path):
     generator_docker = "ext4-generator.dockerfile"
     output_file = output_file_path.absolute()
@@ -102,7 +109,7 @@ def generate_ext4(config, tar_file:Path, output_file_path:Path, images_path: Pat
             f"-v {tar_file.absolute()}:/input.tar "
             f"-v {output_file}:/output.file "
             f"--privileged "
-            f"{generator_docker} /build.cmd /input.tar output.file"
+            f"{generator_docker} /build.cmd /input.tar output.file {config['output']['kernel_boot_params']}"
         )
     ]
     return cmds
@@ -116,6 +123,9 @@ def main(config_file, extension_dir):
     config_metallize['build_dir'] = config_metallize.get('build_dir', 'build')
     config_args = config['args'] = config.get('args', {})
     config_args['compression'] = config_args.get('compression', 'lzma')
+    config_output = config['output']
+    config_output['kernel_boot_params'] = config_output.get('kernel_boot_params',
+        'nomodeset console=ttyS0,115200 console=tty0' )
     build_path = Path(config_metallize['build_dir'])
     images_path = Path(config_metallize['dockerfile_dir'])
     extension_path = Path(extension_dir)
@@ -126,14 +136,12 @@ def main(config_file, extension_dir):
     boot_path = iso_src_path / "boot"
     generators = {
         "ext4": generate_ext4,
-        "livecd": generate_iso
+        "livecd": generate_livecd
     }
     generator = generators[config['output']['generator']]
     cmds = (
         ["set -x -e"]
         + build_tar(config, images_path, build_path, extension_path, project_path, tar_file)
-        # + build_squashfs(config, tar_file, squashfs_file, images_path, project_path)
-        # + extract_kernel_files(boot_path, tar_file)
         + generator(config, tar_file, output_file, images_path, project_path)
     )
     print("\n".join(cmds))

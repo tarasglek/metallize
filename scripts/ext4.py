@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 from subprocess import Popen, PIPE, STDOUT
 
-def main(input_tar, output_diskimage):
+def main(input_tar, output_diskimage, kernel_boot_params):
     input_tar_path = Path(input_tar)
     tar_size = input_tar_path.stat().st_size
     
@@ -17,6 +17,7 @@ def main(input_tar, output_diskimage):
         f"mount {output_diskimage} {mnt_dir} -o loop",
         f"tar -C {mnt_dir} -xf {input_tar}",
         f"cp etc/isolinux.cfg {mnt_dir}/boot/extlinux.conf",
+        f"sed -i 's|METALLIZE_LINUX_CMDLINE|{kernel_boot_params}|' {mnt_dir}/boot/extlinux.conf",
         f"extlinux --install /mnt/boot",
         f"umount {mnt_dir}",
     ])
@@ -25,4 +26,4 @@ def main(input_tar, output_diskimage):
     sys.exit(p.returncode)
 
 if __name__ == '__main__':
-    main(sys.argv[-2], sys.argv[-1])
+    main(sys.argv[1], sys.argv[2], ' '.join(sys.argv[3:]))

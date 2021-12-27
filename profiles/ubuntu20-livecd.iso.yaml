@@ -10,5 +10,5 @@ images:
 - ubuntu-netplan.dockerfile
 - admin-user.dockerfile
 output:
-  generator: squashfs-and-syslinux.dockerfile
-  output-file: livecd.iso
+  generator: livecd
+  file: livecd.iso
