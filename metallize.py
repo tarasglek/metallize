@@ -91,6 +91,10 @@ def generate_iso(config, images_path: Path, build_path:Path, iso_src_path:Path, 
     return cmds
 
 def generate_livecd(config, tar_file:Path, output_file_path:Path, images_path: Path, project_path: Path):
+    build_path = Path(config['metallize']['build_dir'])
+    iso_src_path = build_path / "iso_src"
+    boot_path = iso_src_path / "boot"
+    squashfs_file = iso_src_path / "live" / f"rootfs.squashfs"
     cmds = (build_squashfs(config, tar_file, squashfs_file, images_path, project_path)
             + extract_kernel_files(boot_path, tar_file)
     )
@@ -127,13 +131,10 @@ def main(config_file, extension_dir):
     config_output['kernel_boot_params'] = config_output.get('kernel_boot_params',
         'nomodeset console=ttyS0,115200 console=tty0' )
     build_path = Path(config_metallize['build_dir'])
-    images_path = Path(config_metallize['dockerfile_dir'])
     extension_path = Path(extension_dir)
+    images_path = Path(config_metallize['dockerfile_dir'])
     tar_file = build_path / f"{config_file_path.name}.tar"
     output_file =  build_path / config['output']['file']
-    iso_src_path = build_path / "iso_src"
-    squashfs_file = iso_src_path / "live" / f"rootfs.squashfs"
-    boot_path = iso_src_path / "boot"
     generators = {
         "ext4": generate_ext4,
         "livecd": generate_livecd
