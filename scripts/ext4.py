@@ -1,26 +1,28 @@
 #!/usr/bin/env python3
 import sys
 from pathlib import Path
+from subprocess import Popen, PIPE, STDOUT
 
 def main(input_tar, output_diskimage):
     input_tar_path = Path(input_tar)
     tar_size = input_tar_path.stat().st_size
     
     fudge_factor = 1.50
-    mnt_dir_path = Path(input_tar + ".mnt")
-    mnt_dir = mnt_dir_path.resolve()
-    print(f"umount -l {output_diskimage}")
-    print(f"rm -f {output_diskimage} {mnt_dir}")
-    print(f"truncate -s {int(tar_size * fudge_factor)} {output_diskimage}")
-    print(f"mkfs.ext4 -L METALLIZE_ROOT {output_diskimage}")
-    print(f"mkdir -p {mnt_dir}")
-    print(f"sudo mount {output_diskimage} {mnt_dir} -o loop")
-    print(f"sudo tar -C {mnt_dir} -xvf {input_tar}")
-    print(f"sudo cp etc/isolinux.cfg {mnt_dir}/boot/extlinux.conf")
-    print(f"docker run -v  {mnt_dir}:/mnt  --privileged squashfs-and-syslinux.dockerfile extlinux --install /mnt/boot")
-    print(f"sudo umount {mnt_dir}")
-    print(f"rm -r {mnt_dir}")
-    
+    mnt_dir = "/mnt"
+    cmds = ([
+        f"truncate -s 0 {output_diskimage} # erase any potential leftovers",
+        f"truncate -s {int(tar_size * fudge_factor)} {output_diskimage}",
+        f"mkfs.ext4 -L METALLIZE_ROOT {output_diskimage}",
+        f"mkdir -p {mnt_dir}",
+        f"mount {output_diskimage} {mnt_dir} -o loop",
+        f"tar -C {mnt_dir} -xf {input_tar}",
+        f"cp etc/isolinux.cfg {mnt_dir}/boot/extlinux.conf",
+        f"extlinux --install /mnt/boot",
+        f"umount {mnt_dir}",
+    ])
+    p = Popen(['/bin/sh', '-x', '-e'], stdin=PIPE)
+    p.communicate(input="\n".join(cmds).encode("utf-8"))
+    sys.exit(p.returncode)
 
 if __name__ == '__main__':
     main(sys.argv[-2], sys.argv[-1])

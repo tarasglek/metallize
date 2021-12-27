@@ -90,6 +90,23 @@ def generate_iso(config, images_path: Path, build_path:Path, iso_src_path:Path, 
     ]
     return cmds
 
+def generate_ext4(config, tar_file:Path, output_file_path:Path, images_path: Path, project_path: Path):
+    generator_docker = "ext4-generator.dockerfile"
+    output_file = output_file_path.absolute()
+    cmds = [
+        f"DOCKER_BUILDKIT=1 docker build -t {generator_docker} -f {images_path / generator_docker} {project_path}",
+        f"rm -f {output_file}",
+        f"touch {output_file}",
+        (
+        f"docker run "
+            f"-v {tar_file.absolute()}:/input.tar "
+            f"-v {output_file}:/output.file "
+            f"--privileged "
+            f"{generator_docker} /build.cmd /input.tar output.file"
+        )
+    ]
+    return cmds
+
 def main(config_file, extension_dir):
     project_path = Path(os.path.dirname(os.path.realpath(__file__)))
     config_file_path = Path(config_file)
@@ -103,16 +120,21 @@ def main(config_file, extension_dir):
     images_path = Path(config_metallize['dockerfile_dir'])
     extension_path = Path(extension_dir)
     tar_file = build_path / f"{config_file_path.name}.tar"
+    output_file =  build_path / config['output']['file']
     iso_src_path = build_path / "iso_src"
     squashfs_file = iso_src_path / "live" / f"rootfs.squashfs"
     boot_path = iso_src_path / "boot"
-
+    generators = {
+        "ext4": generate_ext4,
+        "livecd": generate_iso
+    }
+    generator = generators[config['output']['generator']]
     cmds = (
         ["set -x -e"]
         + build_tar(config, images_path, build_path, extension_path, project_path, tar_file)
         # + build_squashfs(config, tar_file, squashfs_file, images_path, project_path)
         # + extract_kernel_files(boot_path, tar_file)
-        + generate_iso(config, images_path, build_path, iso_src_path, boot_path, project_path)
+        + generator(config, tar_file, output_file, images_path, project_path)
     )
     print("\n".join(cmds))
 

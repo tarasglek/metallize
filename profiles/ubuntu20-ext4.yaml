@@ -1,0 +1,14 @@
+---
+# args are passed to every docker build command
+args:
+  compression: lz4
+# images are chained together using dockerfile FROM statement
+# first image can be pulled from registry
+images:
+- ubuntu:20.04
+- ubuntu-livecd.dockerfile
+- ubuntu-netplan.dockerfile
+- admin-user.dockerfile
+output:
+  generator: ext4
+  file: image.ext4
