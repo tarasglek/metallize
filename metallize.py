@@ -47,23 +47,6 @@ def build_tar(config, images_path, build_path, extensions_path, project_path, ta
     cmds.append(f"tar -rvf {tar_file} -C {build_path} etc/resolv.conf")
     return cmds
 
-USER_VAR='--user `id -u`:`id -g`'
-def build_squashfs(config, tar_file: Path, squashfs_file: Path, images_path: Path, project_path: Path):
-    live_path = squashfs_file.parent
-    generator = config['output']['generator']
-    generator_docker = "livecd-generator.dockerfile"
-    cmds = [
-        f"mkdir -p {live_path}",
-        f"DOCKER_BUILDKIT=1 docker build -t {generator} -f {images_path / generator_docker} {project_path}",
-        f"rm -f {squashfs_file}",
-	    (
-            f"tar --wildcards --delete 'boot/*' < {tar_file} | "
-            f"docker run -i -v {live_path.absolute()}:/tmp {USER_VAR} {generator} "
-            f"mksquashfs - /tmp/{squashfs_file.name}  -comp {config['args']['compression']} -b 1024K -always-use-fragments -keep-as-directory -no-recovery -exit-on-error -tar "
-        )
-    ]
-    return cmds
-
 def extract_kernel_files(boot_path: Path, tar_file: Path):
     cmds = [
         f"mkdir -p {boot_path}",
@@ -75,22 +58,10 @@ def extract_kernel_files(boot_path: Path, tar_file: Path):
     ]
     return cmds
 
-def generate_livecd(config, tar_file:Path, output_file_path:Path, images_path: Path, project_path: Path):
-    build_path = Path(config['metallize']['build_dir'])
-    iso_src_path = build_path / "iso_src"
-    boot_path = iso_src_path / "boot"
-    squashfs_file = iso_src_path / "live" / f"rootfs.squashfs"
-    cmds = (build_squashfs(config, tar_file, squashfs_file, images_path, project_path)
-            + extract_kernel_files(boot_path, tar_file)
-    )
-    return cmds
-
-
-def generate_ext4(config, tar_file:Path, output_file_path:Path, images_path: Path, project_path: Path):
-    generator_docker = "ext4-generator.dockerfile"
+def generate_generic(config, generator_name:str, generator_docker_path:Path, tar_file:Path, output_file_path:Path, project_path: Path):
     output_file = output_file_path.absolute()
     cmds = [
-        f"DOCKER_BUILDKIT=1 docker build -t {generator_docker} -f {images_path / generator_docker} {project_path}",
+        f"DOCKER_BUILDKIT=1 docker build -t {generator_name} -f {generator_docker_path} {project_path}",
         f"rm -f {output_file}",
         f"touch {output_file}",
         (
@@ -98,7 +69,7 @@ def generate_ext4(config, tar_file:Path, output_file_path:Path, images_path: Pat
             f"-v {tar_file.absolute()}:/input.tar "
             f"-v {output_file}:/output.file "
             f"--privileged "
-            f"{generator_docker} /build.cmd /input.tar output.file {config['output']['kernel_boot_params']}"
+            f"{generator_name} /build.cmd /input.tar output.file {config['output']['kernel_boot_params']}"
         )
     ]
     return cmds
@@ -121,14 +92,15 @@ def main(config_file, extension_dir):
     tar_file = build_path / f"{config_file_path.name}.tar"
     output_file =  build_path / config['output']['file']
     generators = {
-        "ext4": generate_ext4,
-        "livecd": generate_livecd
+        "ext4": images_path / "ext4-generator.dockerfile",
+        # "livecd": generate_livecd
     }
-    generator = generators[config['output']['generator']]
+    generator_name = config['output']['generator']
+    generator_docker_path = generators[generator_name]
     cmds = (
         ["set -x -e"]
         + build_tar(config, images_path, build_path, extension_path, project_path, tar_file)
-        + generator(config, tar_file, output_file, images_path, project_path)
+        + generate_generic(config, generator_name, generator_docker_path, tar_file, output_file, project_path)
     )
     print("\n".join(cmds))
 
