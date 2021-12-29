@@ -93,7 +93,7 @@ def main(config_file, extension_dir):
     output_file =  build_path / config['output']['file']
     generators = {
         "ext4": images_path / "ext4-generator.dockerfile",
-        # "livecd": generate_livecd
+        "livecd": images_path / "livecd-generator.dockerfile",
     }
     generator_name = config['output']['generator']
     generator_docker_path = generators[generator_name]
