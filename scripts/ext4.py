@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import sys
 from pathlib import Path
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import Popen, PIPE
 
 def main(input_tar, output_diskimage, kernel_boot_params):
     input_tar_path = Path(input_tar)
