@@ -17,7 +17,7 @@ def main(input_tar, output_diskimage, kernel_boot_params):
         f"mount {output_diskimage} {mnt_dir} -o loop",
         f"tar -C {mnt_dir} -xf {input_tar}",
         f"cp etc/isolinux.cfg {mnt_dir}/boot/extlinux.conf",
-        f"sed -i 's|METALLIZE_LINUX_CMDLINE|{kernel_boot_params}|' {mnt_dir}/boot/extlinux.conf",
+        f"sed -i 's|METALLIZE_LINUX_CMDLINE|root=LABEL=METALLIZE_ROOT rw {kernel_boot_params}|' {mnt_dir}/boot/extlinux.conf",
         f"extlinux --install /mnt/boot",
         f"umount {mnt_dir}",
     ])

@@ -6,7 +6,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 ENV KERNEL 5.4.0-52-generic
 RUN --mount=type=cache,target=/var/cache/apt,id=squashfs-and-syslinux-2 \ 
     apt-get update && apt-get install --no-install-recommends -y \
-    mkisofs syslinux syslinux-utils syslinux-common isolinux p7zip-full curl ca-certificates wget extlinux
+    mkisofs syslinux syslinux-utils syslinux-common isolinux p7zip-full curl ca-certificates wget extlinux python3
 RUN mkdir -p /build
 WORKDIR /build
 
@@ -30,6 +30,6 @@ RUN wget -O debian.iso -q --show-progress https://cdimage.debian.org/cdimage/arc
 
 # this controls compression settings for initrd and squashfs
 COPY etc/* /etc
-COPY scripts/build-iso.sh /build.cmd
+COPY scripts/livecd.py /build.cmd
 # copy squashfs tools
 COPY --from=builder /usr/local/bin/*s*fs* /usr/local/bin/

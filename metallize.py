@@ -69,7 +69,7 @@ def generate_generic(config, generator_name:str, generator_docker_path:Path, tar
             f"-v {tar_file.absolute()}:/input.tar "
             f"-v {output_file}:/output.file "
             f"--privileged "
-            f"{generator_name} /build.cmd /input.tar output.file {config['output']['kernel_boot_params']}"
+            f"{generator_name} /build.cmd /input.tar /output.file {config['output']['kernel_boot_params']}"
         )
     ]
     return cmds
