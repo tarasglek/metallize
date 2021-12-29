@@ -9,7 +9,6 @@ def main(dry_run:bool, input_tar, output_diskimage, kernel_boot_params):
     squashfs_file = iso_src_path / "live" / f"rootfs.squashfs"
     isolinux_path = iso_src_path / "isolinux"
     grub_path = iso_src_path / "boot/grub/x86_64-efi/"
-    # wonder if this can be a directory
     grub_search = iso_src_path / ".disk/info"
 
     compression = "lz4"
