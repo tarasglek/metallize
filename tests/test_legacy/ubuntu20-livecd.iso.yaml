@@ -9,7 +9,7 @@ images:
 - ubuntu-livecd.dockerfile
 - ubuntu-netplan.dockerfile
 output:
-  generator: squashfs-and-syslinux.dockerfile
-  output-file: livecd.iso
+  generator: livecd
+  file: livecd.iso
 metallize:
   build_dir: tests/test_legacy/build
