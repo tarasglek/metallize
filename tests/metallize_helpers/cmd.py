@@ -34,7 +34,7 @@ class MetallizeTest:
     def cleanup(self):
         run(f'rm -rf {self.build_path}')
     
-    def modify_config(self, modifier_f):
+    def generate_config_from_template(self, modifier_f=lambda _ : ()):
         cfg = load_config(self.project_path, self.src_config, default_built_dir=str(self.build_path))
         modifier_f(cfg)
         cfg_str = json.dumps(cfg, indent=4, sort_keys=True)
@@ -50,7 +50,7 @@ class MetallizeTest:
 
     def run_qemu(self, checker_f, legacy_or_uefi="legacy", timeout = 3 * 60):
         with open(self.uefi_logs, 'w') as log_file:
-            p = cmd.popen(f"{self.project_path}/scripts/{legacy_or_uefi}-boot.sh {self.livecd_iso}", log_file)
+            p = popen(f"{self.project_path}/scripts/{legacy_or_uefi}-boot.sh {self.livecd_iso}", log_file)
         self.pid = p.pid
         start_time = time.time()
         success = False

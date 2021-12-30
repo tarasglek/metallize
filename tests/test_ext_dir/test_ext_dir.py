@@ -10,6 +10,6 @@ def cleanup():
     test.cleanup()
 
 def test_build_from_ext_dir(cleanup):
-    test.modify_config(lambda cfg: cfg['images'].append('test.dockerfile'))
+    test.generate_config_from_template(lambda cfg: cfg['images'].append('test.dockerfile'))
     test.run_metallize(extra_args=f"--extensions_dir={test.test_path}")
     test.run_qemu(checker_f=lambda output: output.find('test-host login') != -1)
