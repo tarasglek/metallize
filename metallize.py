@@ -74,18 +74,23 @@ def generate_generic(config, generator_name:str, generator_docker_path:Path, tar
     ]
     return cmds
 
-def main(config_file, extension_dir):
-    project_path = Path(os.path.dirname(os.path.realpath(__file__)))
-    config_file_path = Path(config_file)
+def load_config(project_path, config_file_path, default_built_dir='build'):
     config = yaml.load(open(config_file_path), Loader=yaml.SafeLoader)
     config_metallize = config['metallize'] = config.get('metallize', {})
-    config_metallize['dockerfile_dir'] = config_metallize.get('dockerfile_dir', project_path / 'docker')
-    config_metallize['build_dir'] = config_metallize.get('build_dir', 'build')
+    config_metallize['dockerfile_dir'] = config_metallize.get('dockerfile_dir', str((project_path / 'docker')))
+    config_metallize['build_dir'] = config_metallize.get('build_dir', default_built_dir)
     config_args = config['args'] = config.get('args', {})
     config_args['compression'] = config_args.get('compression', 'lzma')
     config_output = config['output']
     config_output['kernel_boot_params'] = config_output.get('kernel_boot_params',
         'nomodeset console=ttyS0,115200 console=tty0' )
+    return config
+    
+def main(config_file, extension_dir):
+    project_path = Path(os.path.dirname(os.path.realpath(__file__)))
+    config_file_path = Path(config_file)
+    config = load_config(project_path, config_file_path)
+    config_metallize = config['metallize']
     build_path = Path(config_metallize['build_dir'])
     extension_path = Path(extension_dir)
     images_path = Path(config_metallize['dockerfile_dir'])
