@@ -24,7 +24,7 @@ class MetallizeTest:
         self.metallize_logs = self.test_path / "metallize_logs.txt"
         self.uefi_logs = self.test_path / "build_uefi_logs.txt"
         self.build_path = self.test_path / 'build'
-        self.livecd_iso = self.build_path / 'livecd.iso'
+        self.output_image = self.build_path / 'filesystem.img'
         self.modified_config = self.build_path / (test_path.stem + '.json')
 
     def setup(self):
@@ -36,6 +36,7 @@ class MetallizeTest:
     
     def generate_config_from_template(self, modifier_f=lambda _ : ()):
         cfg = load_config(self.project_path, self.src_config, default_built_dir=str(self.build_path))
+        cfg['output']['file'] = str(self.output_image)
         modifier_f(cfg)
         cfg_str = json.dumps(cfg, indent=4, sort_keys=True)
         logging.info(cfg_str)
@@ -46,11 +47,11 @@ class MetallizeTest:
     def run_metallize(self, extra_args = ''):
         run(f'cd {self.test_path} | {self.project_path}/metallize.py {self.modified_config} {extra_args} '
               f'| bash > {self.metallize_logs} 2>&1')
-        assert(self.livecd_iso.exists())
+        assert(self.output_image.exists())
 
     def run_qemu(self, checker_f, legacy_or_uefi="legacy", timeout = 3 * 60):
         with open(self.uefi_logs, 'w') as log_file:
-            p = popen(f"{self.project_path}/scripts/{legacy_or_uefi}-boot.sh {self.livecd_iso}", log_file)
+            p = popen(f"{self.project_path}/scripts/{legacy_or_uefi}-boot.sh {self.output_image}", log_file)
         self.pid = p.pid
         start_time = time.time()
         success = False
