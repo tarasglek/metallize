@@ -1,24 +1,30 @@
-## Metallize
+# Metallize
 Generate bootable disk images from Dockerfiles.
 
-### Problem
-
-*I want to be able to robustly generate OS images with minimum headache.*
+## Problem
 
 If you don't know what an OS image is, you probably don't need this tool, can stop reading now.
 
 
-1) Operating system image generation is usually done by taking some vendor boot image, booting it, then applying some automation to it(kickstart, ansible) and freezing into some sort of golden image.
+*I want to be able to robustly generate OS images with minimum headache.*
 
-2) Alternatively there are custom solutions like [Yocto](https://www.yoctoproject.org/software-overview/) which constitute a wholy custom solution.
 
-The problem with (1) solution is that it's not-easily-reproducible/automateable. Eg nobody uses `docker commit` it in the container world. Yocto-style solutions (2) require learning a whole new ecosystem, including a new distribution, that's too much.
+In particular, I'd like to control exactly what software goes into the image and how the image behaves, eg overlayfs livecd vs mutable ext4.
 
-### Overview: Generate filesystem using docker + add bits to make it bootable
-Metallize project is a recipe for building vm images where 
+Existing approaches suck:
 
-1) We use a series of Dockerfiles to generate the filesystem just as we would for any container use-case.
-2) Use another docker image to convert that filesystem into a binary bootable image. The bootable image could be a container-style squashfs/overlayfs livecd where every change is reset on restart or a conventional mutable ext4 filesystem.
+1) Operating system image generation is usually done by taking some vendor boot image, booting it, then applying some automation to it(kickstart, ansible) and freezing into some sort of golden image. The problem is that this is not easily reproducible/automateable. Eg nobody uses `docker commit` it in the container world.
 
-### Example
+2) Alternatively there are custom solutions like [Yocto](https://www.yoctoproject.org/software-overview/) which constitute a wholy custom solution. This requires learning a whole new ecosystem, including a new distribution, that's too much.
 
+## Idea Behind Metallize: Docker is Great for Generating Filesystems, Shipping Tools
+
+1) We use one or more Dockerfiles to generate the filesystem just as we would for any container use-case.
+1) Ensure that fs has kernel + init system + networking configured
+2) Pipe that filesystem into a special docker image that knows how to make filesystems
+
+## Quickstart
+
+```
+python3 -m virtualenv .venv
+./.venv/bin/python3 -m pip install -r requirements.txt
