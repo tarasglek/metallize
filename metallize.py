@@ -103,7 +103,10 @@ def main(config_file, extension_dir):
     generator_name = config['output']['generator']
     generator_docker_path = generators[generator_name]
     cmds = (
-        ["set -x -e"]
+        [
+            "#!/bin/bash",
+            "set -x -e"
+        ]
         + build_tar(config, images_path, build_path, extension_path, project_path, tar_file)
         + generate_generic(config, generator_name, generator_docker_path, tar_file, output_file, project_path)
     )
